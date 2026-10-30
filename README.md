@@ -1,7 +1,7 @@
 # MOJA MALA MAHALA
 
 Browser društvena igra izgradnje mahale za solo i multiplayer. Koristi Node.js, Express i Socket.IO. Svaki igrač gradi na vlastitoj tabli 4 × 4.
-
+Totalno nije kopija Tiny Towns!
 ## Pokretanje
 ```bash
 npm install
