@@ -19,3 +19,21 @@ test('klijent sadrži pet materijala i deset originalnih zgrada', () => {
   for(const material of ['wood','brick','stone','grain','crystal']) assert.ok(source.includes(`${material}:`));
   for(const id of ['cottage','farm','kiln','workshop','market','watchtower','library','sanctuary','fortress','obelisk']) assert.ok(source.includes(`id:'${id}'`));
 });
+
+test('završavanje kruga postoji u multiplayer serveru i klijentu', () => {
+  const server=fs.readFileSync(path.join(root,'server.js'),'utf8');
+  const client=fs.readFileSync(path.join(root,'public/script.js'),'utf8');
+  assert.match(server,/socket\.on\('turn:done'/);
+  assert.match(server,/doneThisRound/);
+  assert.match(client,/I am done/);
+  assert.match(client,/soloDone\(\)/);
+});
+test('bonus vodič i vizuelno označavanje dostupnih zgrada postoje', () => {
+  const html=fs.readFileSync(path.join(root,'public/index.html'),'utf8');
+  const client=fs.readFileSync(path.join(root,'public/script.js'),'utf8');
+  const css=fs.readFileSync(path.join(root,'public/style.css'),'utf8');
+  assert.match(html,/id="bonusHelp"/);
+  assert.match(client,/Najveći graditelj/);
+  assert.match(client,/available-\$\{can\}/);
+  assert.match(css,/\.building-card\.available-true/);
+});

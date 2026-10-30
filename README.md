@@ -48,6 +48,7 @@ Server koristi `process.env.PORT` i sluša na `0.0.0.0`, što odgovara Render We
 - U multiplayeru jedan igrač bira jedan od pet materijala, a svi ga postavljaju na vlastitu ploču. Birač se rotira iz kruga u krug.
 - Nakon postavljanja slijedi faza gradnje. Svaki igrač može izgraditi najviše jednu zgradu po krugu: izabere recept, označi tri odgovarajuća resursa, a zatim sam odabere jedno od ta tri oslobođena polja na koje postavlja zgradu. Preostala dva polja ostaju prazna.
 - Zgrade koje traže liniju, susjedstvo ili L-oblik moraju ispuniti taj raspored. Ostali recepti mogu se sastaviti s bilo kojih polja.
+- Zgrade za koje trenutno imaš odgovarajuće resurse i raspored blago su označene zelenom bojom. Dugme **?** uz dostupne građevine prikazuje završne bonus nagrade.
 - Svaki igrač ima jedan REWIND. Nakon što je postavio resurs u tekućem krugu može vratiti jedan resurs i zamijeniti ga trenutno odabranim materijalom. Zgrade se ne mogu ukloniti.
 - Ako igrač ne postavi resurs u vremenu, server ga automatski postavlja na prvo slobodno polje. Ako ne završi fazu gradnje, faza se automatski preskače.
 - Partija se završava nakon odabranog broja krugova. Bodovi uključuju osnovne vrijednosti i bonuse zgrada, kompletne redove/kolone te tri posebne nagrade.

@@ -4,3 +4,16 @@
 @media(max-width:380px){.app-shell{padding:0 10px}h1{font-size:41px}.hero-buttons{gap:6px}.primary-button,.secondary-button{padding:12px 10px;font-size:9px}.board-grid{gap:4px;padding:5px}.board-panel{padding:10px}.game-topline h2{font-size:20px}.round-pill{font-size:8px}.building-list{gap:5px}.building-card{padding:6px}.building-card b{font-size:7px}}
 
 .building-svg{width:72%;height:72%;display:block;color:currentColor}.building-token .building-svg{width:65%;height:65%;}.building-icon .building-svg{width:76%;height:76%;}
+
+/* Round completion, bonus guide and buildable blueprint states */
+.help-button{width:25px;height:25px;border:1px solid #cbd4c4;border-radius:50%;background:#f4f7ef;color:#587353;font-weight:800;font-size:13px;cursor:pointer;flex-shrink:0;margin-left:8px}
+.help-button:hover{background:#e5eee0;border-color:#91a989}
+.building-card.available-true{background:#f0f6eb;border-color:#bfd1b5;box-shadow:inset 0 0 0 1px #e1ecda}
+.building-card.available-true:hover{background:#e7f0e1;border-color:#8eaa83}
+.building-card.available-true b{color:#496b46}
+.done-button{background:#426d4a}
+.done-button:hover{background:#345c3d}
+.done-note{display:block;text-align:center;color:#879184;font-size:9px;line-height:1.5;margin-top:7px}
+@media(max-width:650px){.help-button{width:23px;height:23px;margin-left:4px}}
+
+.building-card.available-true:disabled{opacity:.82}
