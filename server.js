@@ -11,18 +11,16 @@ const io = new Server(server, { cors: { origin: true, methods: ['GET','POST'] } 
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('/health', (_req, res) => res.json({ ok: true, game: 'MINI KINGDOM' }));
 
-const MATERIALS = ['wood','brick','stone','grain','crystal'];
+const MATERIALS = ['wood','brick','stone'];
 const BUILDINGS = [
-  {id:'cottage',name:'Mirna kuća',icon:'⌂',color:'#d8a66b',points:2,recipe:{wood:2,grain:1},shape:'any',desc:'Pouzdan temelj grada. Donosi 1 dodatni bod ako je uz farmu.'},
-  {id:'farm',name:'Zlatna farma',icon:'♧',color:'#a8bd61',points:2,recipe:{grain:2,wood:1},shape:'any',desc:'Poljoprivredno srce kraljevstva. Svaka farma vrijedi +1 ako dodiruje drugu farmu.'},
-  {id:'kiln',name:'Crvena ciglana',icon:'▥',color:'#c96d5c',points:3,recipe:{brick:2,stone:1},shape:'line',desc:'Ako je u istom redu ili koloni s drugom ciglanom, dobija +1 bod.'},
-  {id:'workshop',name:'Majstorska radionica',icon:'⚒',color:'#a98bca',points:3,recipe:{wood:1,brick:1,stone:1},shape:'any',desc:'Svaka radionica uz kuću donosi +1 bod.'},
-  {id:'market',name:'Trgovački trg',icon:'◇',color:'#e0b84e',points:3,recipe:{grain:1,brick:1,crystal:1},shape:'adjacent',desc:'Dobija +1 bod za svaku susjednu različitu zgradu (najviše +2).'},
-  {id:'watchtower',name:'Stražarska kula',icon:'♜',color:'#8295a8',points:4,recipe:{wood:1,brick:1,stone:1},shape:'L',desc:'Dobija +2 boda ako se nalazi u uglu ploče.'},
-  {id:'library',name:'Kristalna biblioteka',icon:'✧',color:'#68a9d1',points:4,recipe:{crystal:2,wood:1},shape:'any',desc:'Dobija +1 bod za svaki kristalni objekat u istom redu ili koloni (najviše +2).'},
-  {id:'sanctuary',name:'Šumsko svetište',icon:'❋',color:'#5eaa8a',points:4,recipe:{wood:1,grain:1,crystal:1},shape:'adjacent',desc:'Svaka susjedna farma donosi +1 bod.'},
-  {id:'fortress',name:'Kamena utvrda',icon:'⬟',color:'#78818e',points:5,recipe:{brick:1,stone:2},shape:'L',desc:'Dobija +2 boda ako dodiruje najmanje dvije različite zgrade.'},
-  {id:'obelisk',name:'Nebeski obelisk',icon:'♢',color:'#6b8ed4',points:5,recipe:{crystal:1,stone:1,grain:1},shape:'any',desc:'Dobija +1 bod za svaki drugi obelisk u gradu.'}
+  {id:'cottage',name:'Mirna kuća',icon:'⌂',color:'#d8a66b',points:3,recipe:{wood:2,brick:1},shape:'any',desc:'Osnovna kuća. Dobija +1 bod ako dodiruje farmu.'},
+  {id:'farm',name:'Zlatna farma',icon:'♧',color:'#a8bd61',points:2,recipe:{wood:1,stone:2},shape:'any',desc:'Proizvodno imanje. Dobija +1 bod ako dodiruje drugu farmu.'},
+  {id:'kiln',name:'Crvena ciglana',icon:'▥',color:'#c96d5c',points:3,recipe:{brick:2,stone:1},shape:'any',desc:'Industrijska zgrada. Dobija +1 bod ako je u istom redu ili koloni s drugom ciglanom.'},
+  {id:'workshop',name:'Majstorska radionica',icon:'⚒',color:'#a98bca',points:3,recipe:{wood:1,brick:1,stone:1},shape:'any',desc:'Radionica. Dobija +1 bod ako dodiruje kuću.'},
+  {id:'market',name:'Trgovački trg',icon:'◇',color:'#e0b84e',points:3,recipe:{wood:1,brick:1,stone:1},shape:'any',desc:'Trgovina. Dobija +1 bod za svaku različitu susjednu zgradu (najviše +2).'},
+  {id:'watchtower',name:'Stražarska kula',icon:'♜',color:'#8295a8',points:4,recipe:{wood:2,stone:1},shape:'any',desc:'Odbrana kraljevstva. Dobija +2 boda ako je postavljena u uglu ploče.'},
+  {id:'library',name:'Kamena biblioteka',icon:'✧',color:'#68a9d1',points:4,recipe:{brick:1,stone:2},shape:'any',desc:'Mjesto znanja. Dobija +1 bod za svaku drugu biblioteku u istom redu ili koloni (najviše +2).'},
+  {id:'fortress',name:'Kamena utvrda',icon:'⬟',color:'#78818e',points:5,recipe:{brick:2,wood:1},shape:'any',desc:'Velika odbrambena građevina. Dobija +2 boda ako dodiruje najmanje dvije različite vrste zgrada.'}
 ];
 const rooms = new Map();
 const cleanName = n => String(n || 'Igrač').trim().replace(/[<>]/g,'').slice(0,18) || 'Igrač';
@@ -38,18 +36,29 @@ function findRoom(socket) { return socket.data.roomCode && rooms.get(socket.data
 function error(socket,msg) { socket.emit('notice',{type:'error',message:msg}); }
 function isHost(room,socket) { return room.hostId===socket.id; }
 function idxNeighbors(i) { const r=Math.floor(i/4),c=i%4; return [r>0?i-4:-1,r<3?i+4:-1,c>0?i-1:-1,c<3?i+1:-1].filter(x=>x>=0); }
+function connectedGroup(selected) {
+  const neighbors = i => { const r=Math.floor(i/4),c=i%4; return [r>0?i-4:-1,r<3?i+4:-1,c>0?i-1:-1,c<3?i+1:-1].filter(x=>x>=0); };
+  const seen = new Set([selected[0]]);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const i of selected) if (!seen.has(i) && selected.some(j => seen.has(j) && neighbors(j).includes(i))) {
+      seen.add(i); changed = true;
+    }
+  }
+  return seen.size === 3;
+}
 function recipeMatches(board, selected, b) {
-  if (selected.length!==3 || new Set(selected).size!==3) return false;
-  const cells=selected.map(i=>board[i]); if(cells.some(x=>!x || x.type!=='resource')) return false;
-  const counts={}; cells.forEach(x=>counts[x.material]=(counts[x.material]||0)+1);
-  const need=b.recipe;
-  if(Object.keys(need).some(k=>(counts[k]||0)<need[k])) return false;
-  const extras=Object.keys(counts).reduce((s,k)=>s+counts[k]-(need[k]||0),0);
-  if(extras!==0) return false;
-  if(b.shape==='line') { const rows=selected.map(i=>Math.floor(i/4)); const cols=selected.map(i=>i%4); if(!(rows.every(x=>x===rows[0])||cols.every(x=>x===cols[0]))) return false; }
-  if(b.shape==='adjacent') { const seen=new Set([selected[0]]); let changed=true; while(changed){changed=false; for(const i of selected) if(!seen.has(i)&&selected.some(j=>seen.has(j)&&idxNeighbors(j).includes(i))){seen.add(i);changed=true;} } if(seen.size!==3)return false; }
-  if(b.shape==='L') { const rs=selected.map(i=>Math.floor(i/4)),cs=selected.map(i=>i%4); const rspan=Math.max(...rs)-Math.min(...rs),cspan=Math.max(...cs)-Math.min(...cs); if(!(rspan===1&&cspan===1&&new Set(selected).size===3)) return false; }
-  return true;
+  if (!Array.isArray(selected) || selected.length !== 3 || new Set(selected).size !== 3) return false;
+  if (selected.some(i => !Number.isInteger(i) || i < 0 || i > 15)) return false;
+  const cells = selected.map(i => board[i]);
+  if (cells.some(x => !x || x.type !== 'resource')) return false;
+  const counts = {};
+  cells.forEach(x => counts[x.material] = (counts[x.material] || 0) + 1);
+  if (Object.keys(b.recipe).some(k => (counts[k] || 0) !== b.recipe[k])) return false;
+  if (Object.keys(counts).some(k => !b.recipe[k])) return false;
+  // All three resource squares must form one orthogonally connected group.
+  return connectedGroup(selected);
 }
 function calcBuildingBonus(board,i,b) {
   const near=idxNeighbors(i).map(j=>board[j]).filter(x=>x&&x.type==='building');
@@ -59,10 +68,8 @@ function calcBuildingBonus(board,i,b) {
   if(b.id==='workshop' && near.some(x=>x.buildingId==='cottage')) return 1;
   if(b.id==='market') return Math.min(2,new Set(near.map(x=>x.buildingId)).size);
   if(b.id==='watchtower' && [0,3,12,15].includes(i)) return 2;
-  if(b.id==='library') return Math.min(2,board.filter((x,j)=>x?.type==='building'&&['library','obelisk'].includes(x.buildingId)&&j!==i&&(Math.floor(j/4)===Math.floor(i/4)||j%4===i%4)).length);
-  if(b.id==='sanctuary') return near.filter(x=>x.buildingId==='farm').length;
+  if(b.id==='library') return Math.min(2,board.filter((x,j)=>x?.buildingId==='library'&&j!==i&&(Math.floor(j/4)===Math.floor(i/4)||j%4===i%4)).length);
   if(b.id==='fortress' && new Set(near.map(x=>x.buildingId)).size>=2) return 2;
-  if(b.id==='obelisk') return board.filter((x,j)=>j!==i&&x?.buildingId==='obelisk').length;
   return 0;
 }
 function finishGame(room) {
@@ -127,6 +134,16 @@ io.on('connection', socket=>{
   socket.on('host:skip',()=>{const r=findRoom(socket);if(!r||!isHost(r,socket)||r.status!=='playing')return;if(r.phase==='select')autoSelect(r);else if(r.phase==='place')autoPlace(r);else{r.players.forEach(p=>{p.builtThisRound=true;p.doneThisRound=true;});nextIfDone(r);}});
   socket.on('host:end',()=>{const r=findRoom(socket);if(!r||!isHost(r,socket))return;finishGame(r);});
   socket.on('host:kick',({playerId}={})=>{const r=findRoom(socket);if(!r||!isHost(r,socket)||r.status!=='lobby')return;const p=r.players.find(x=>x.id===playerId);if(!p||p.id===r.hostId)return;io.to(p.id).emit('room:kicked');const s=io.sockets.sockets.get(p.id);if(s){s.leave(r.code);s.data.roomCode=null;}r.players=r.players.filter(x=>x.id!==playerId);emitRoom(r);});
+  socket.on('room:leave',()=>{
+    const r=findRoom(socket);if(!r)return;
+    const p=r.players.find(x=>x.id===socket.id);
+    if(p){r.players=r.players.filter(x=>x.id!==socket.id);socket.leave(r.code);}
+    socket.data.roomCode=null;
+    if(!r.players.length){clearTimeout(r.timer);rooms.delete(r.code);return;}
+    if(r.hostId===socket.id){const next=r.players.find(x=>x.connected);if(next)r.hostId=next.id;}
+    if(r.status==='playing'&&r.players.length&&r.players.every(x=>x.doneThisRound))nextIfDone(r);
+    emitRoom(r);
+  });
   socket.on('disconnect',()=>{const r=findRoom(socket);if(!r)return;const p=r.players.find(x=>x.id===socket.id);if(p)p.connected=false;if(r.hostId===socket.id){const next=r.players.find(x=>x.connected);if(next)r.hostId=next.id;}if(r.status==='lobby'&&r.players.every(x=>!x.connected)){rooms.delete(r.code);return;}emitRoom(r);});
 });
 const PORT=process.env.PORT||3000;server.listen(PORT,'0.0.0.0',()=>console.log(`MINI KINGDOM sluša na ${PORT}`));
