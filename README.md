@@ -1,53 +1,39 @@
-# MINI KINGDOM
+# MOJA MALA MAHALA
 
-Mini Kingdom je brza browser igra izgradnje grada za solo i multiplayer. Koristi Node.js, Express i Socket.IO. Svaki igrač gradi na vlastitoj ploči 4 × 4.
+Browser društvena igra izgradnje mahale za solo i multiplayer. Koristi Node.js, Express i Socket.IO. Svaki igrač gradi na vlastitoj tabli 4 × 4.
 
 ## Pokretanje
-
 ```bash
 npm install
 npm start
 ```
-
-Otvori `http://localhost:3000`. Za multiplayer otvori igru u dva ili više prozora/uređaja. Jedan igrač kreira sobu, ostali se pridružuju kodom.
+Otvori `http://localhost:3000`. Za multiplayer otvori igru na dva ili više uređaja: jedan igrač kreira sobu, a ostali se pridružuju kodom.
 
 ## Render
-
 - Build Command: `npm install`
 - Start Command: `npm start`
 - Node 18 ili noviji
+- Server sluša na `0.0.0.0` i koristi `process.env.PORT`.
 
-Server sluša na `0.0.0.0` i koristi `process.env.PORT`.
-
-## Osnovna pravila
-
-- Ploča ima 16 polja (4 × 4), označenih brojevima 1–16.
-- Igra koristi samo tri materijala: drvo, ciglu i kamen.
-- Svaki krug dobija se jedan materijal. U multiplayeru ga bira aktivni igrač; u solo modu bira se nasumično.
-- Postavi materijal na prazno polje. Zatim možeš izgraditi najviše jednu građevinu.
-- Svaka građevina traži tačno tri materijala prema receptu.
-- **Sva tri korištena materijala moraju činiti jednu povezanu grupu.** Polja se povezuju samo gore, dolje, lijevo i desno; dijagonalni dodir nije dovoljan. Primjer: polja 1, 2 i 4 su povezana; polja 1, 2 i 6 nisu.
-- Građevine ostaju prikazane u listi. Zelena kartica znači da trenutno imaš recept i povezane materijale za gradnju. Svaka kartica prikazuje recept, osnovne bodove i poseban bonus. Klik na bilo koju karticu otvara detalje.
-- Kada izgradiš zgradu, odabrana tri materijala se uklanjaju, a zgrada zauzima jedno od tri oslobođena polja.
-- `I am done` završava tvoj dio kruga. U multiplayeru sljedeći krug počinje kada svi završe; solo prelazi odmah.
-- Svaki igrač ima jedan REWIND po partiji, kojim može zamijeniti postavljeni resurs trenutnim materijalom.
-- Ploča, građevine i tajne završne nagrade prikazane su u vodiču `?`.
+## Materijali i gradnja
+Igra koristi Drvo, Ciglu i Kamen. Svaki krug igrači dobijaju isti materijal i postavljaju ga na prazno polje. U fazi gradnje mogu izgraditi najviše jednu građevinu. Svi materijali iz recepta moraju biti povezani horizontalno ili vertikalno; dijagonalno povezivanje se ne računa. Nije potreban poseban oblik. Nakon gradnje materijali se vraćaju u zajedničku zalihu i uklanjaju s table; građevina zauzima jedno od njihovih polja, a ostala polja postaju prazna.
 
 ## Građevine
+- Glavna kuća: 3 materijala; +1 za svaki različiti tip susjedne građevine.
+- Farma: 3 materijala; +2 za svaku susjednu Farmu.
+- Kula: 3 materijala; +2 u uglu table.
+- Ciglana: 3 materijala; +1 ako je u istom redu ili koloni druga Ciglana ili Radionica.
+- Radionica: 3 materijala; isto industrijsko pravilo kao Ciglana.
+- Pijaca: 3 materijala; na kraju +2 za svaki susjedni neiskorišteni materijal.
+- Biblioteka: jedina građevina s 4 materijala; +1 za svaku drugu građevinu u osam okolnih polja (uključujući dijagonale), najviše +7.
+- Fontana: dopunska građevina, 2 materijala; na kraju +1 za svako prazno susjedno polje, najviše +4.
 
-1. Mirna kuća — 3 boda; +1 uz farmu.
-2. Zlatna farma — 2 boda; +1 uz drugu farmu.
-3. Crvena ciglana — 3 boda; +1 ako je u istom redu/koloni s drugom ciglanom.
-4. Majstorska radionica — 3 boda; +1 uz kuću.
-5. Trgovački trg — 3 boda; +1 za svaku različitu susjednu vrstu zgrade, najviše +2.
-6. Stražarska kula — 4 boda; +2 u uglu ploče.
-7. Kamena biblioteka — 4 boda; +1 za svaku drugu biblioteku u istom redu/koloni, najviše +2.
-8. Kamena utvrda — 5 bodova; +2 ako dodiruje najmanje dvije različite vrste zgrada.
+Sedam građevina je označeno kao glavne, a Fontana kao dopunska, jer je to raspored izričito naveden u specifikaciji pojedinačnih građevina.
 
-## Završne nagrade
+## Dodatni bonusi
+Svaki kompletiran red ili kolona sa četiri građevine donosi +1 novčić odmah, samo jednom po liniji. Na kraju partije svaki takav red i kolona donose i +1 bod.
 
-- Najveći graditelj: +3 boda za najviše izgrađenih zgrada.
-- Najraznovrsniji grad: +3 boda za najviše različitih vrsta građevina.
-- Najveći poljoprivrednik: +2 boda za najviše farmi.
-- Svaki kompletan red ili kolona sastavljen od građevina: +1 bod.
-- Nagrade za prvo mjesto se ne dodjeljuju kod izjednačenja.
+## Završno bodovanje
+Bodovi građevina i bonusi se računaju na kraju partije. Pijaca i Fontana ostvaruju završne bonuse tek tada. U multiplayeru jedinstveni prvak po broju građevina dobija +3, po različitim tipovima +3, a po broju Farma +2; kod izjednačenja nagrada se ne dodjeljuje. Solo igra dodjeljuje odgovarajuću nagradu ako je uslov ispunjen.
+
+Svaki igrač ima jedan REWIND po partiji, kojim može zamijeniti jedan postavljeni materijal trenutnim materijalom. Građevine se ne mogu uklanjati.

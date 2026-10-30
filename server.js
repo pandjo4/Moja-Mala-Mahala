@@ -12,22 +12,13 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.get('/health', (_req, res) => res.json({ ok: true, game: 'MINI KINGDOM' }));
 
 const MATERIALS = ['wood','brick','stone'];
-const BUILDINGS = [
-  {id:'cottage',name:'Mirna kuća',icon:'⌂',color:'#d8a66b',points:3,recipe:{wood:2,brick:1},shape:'any',desc:'Osnovna kuća. Dobija +1 bod ako dodiruje farmu.'},
-  {id:'farm',name:'Zlatna farma',icon:'♧',color:'#a8bd61',points:2,recipe:{wood:1,stone:2},shape:'any',desc:'Proizvodno imanje. Dobija +1 bod ako dodiruje drugu farmu.'},
-  {id:'kiln',name:'Crvena ciglana',icon:'▥',color:'#c96d5c',points:3,recipe:{brick:2,stone:1},shape:'any',desc:'Industrijska zgrada. Dobija +1 bod ako je u istom redu ili koloni s drugom ciglanom.'},
-  {id:'workshop',name:'Majstorska radionica',icon:'⚒',color:'#a98bca',points:3,recipe:{wood:1,brick:1,stone:1},shape:'any',desc:'Radionica. Dobija +1 bod ako dodiruje kuću.'},
-  {id:'market',name:'Trgovački trg',icon:'◇',color:'#e0b84e',points:3,recipe:{wood:1,brick:1,stone:1},shape:'any',desc:'Trgovina. Dobija +1 bod za svaku različitu susjednu zgradu (najviše +2).'},
-  {id:'watchtower',name:'Stražarska kula',icon:'♜',color:'#8295a8',points:4,recipe:{wood:2,stone:1},shape:'any',desc:'Odbrana kraljevstva. Dobija +2 boda ako je postavljena u uglu ploče.'},
-  {id:'library',name:'Kamena biblioteka',icon:'✧',color:'#68a9d1',points:4,recipe:{brick:1,stone:2},shape:'any',desc:'Mjesto znanja. Dobija +1 bod za svaku drugu biblioteku u istom redu ili koloni (najviše +2).'},
-  {id:'fortress',name:'Kamena utvrda',icon:'⬟',color:'#78818e',points:5,recipe:{brick:2,wood:1},shape:'any',desc:'Velika odbrambena građevina. Dobija +2 boda ako dodiruje najmanje dvije različite vrste zgrada.'}
-];
+const BUILDINGS = [{"id":"cottage","name":"Glavna kuća","icon":"⌂","color":"#d8a66b","points":4,"recipe":{"wood":2,"brick":1},"category":"glavna","desc":"+1 bod za svaki različiti tip građevine koji direktno dodiruje Glavnu kuću.","example":"Ako je dodiruju Farma, Kula i Ciglana, dobija +3 boda."},{"id":"farm","name":"Farma","icon":"♧","color":"#a8bd61","points":2,"recipe":{"wood":1,"stone":2},"category":"glavna","desc":"+2 boda za svaku drugu Farmu koja je direktno dodiruje.","example":"Ako dodiruje dvije druge Farme, dobija +4 boda."},{"id":"watchtower","name":"Kula","icon":"♜","color":"#8295a8","points":4,"recipe":{"wood":2,"stone":1},"category":"glavna","desc":"+2 boda ako je postavljena u jednom od četiri ugaona polja.","example":"Ako je postavljena u ugaono polje, dobija +2 boda."},{"id":"kiln","name":"Ciglana","icon":"▥","color":"#c96d5c","points":3,"recipe":{"brick":2,"stone":1},"category":"glavna","desc":"+1 bod ako se u istom redu ili koloni nalazi druga Ciglana ili Radionica.","example":"Ako se u istom redu ili koloni nalazi Radionica, dobija +1 bod."},{"id":"workshop","name":"Radionica","icon":"⚒","color":"#a98bca","points":3,"recipe":{"wood":1,"brick":1,"stone":1},"category":"glavna","desc":"+1 bod ako se u istom redu ili koloni nalazi druga Ciglana ili Radionica.","example":"Ako se u istom redu ili koloni nalazi Ciglana, dobija +1 bod."},{"id":"market","name":"Pijaca","icon":"◇","color":"#e0b84e","points":3,"recipe":{"wood":1,"brick":1,"stone":1},"category":"glavna","desc":"+2 boda za svaki neiskorišteni materijal koji je direktno dodiruje na kraju partije.","example":"Ako je na kraju dodiruju tri neiskorištena materijala, dobija +6 bodova."},{"id":"library","name":"Biblioteka","icon":"✧","color":"#68a9d1","points":4,"recipe":{"brick":2,"stone":2},"category":"glavna","desc":"+1 bod za svaku drugu građevinu u osam okolnih polja, uključujući dijagonalna (najviše +7). Posebna cijena: 4 materijala.","example":"Ako je okružuje pet drugih građevina, dobija +5 bodova; najviše +7."},{"id":"fountain","name":"Fontana","icon":"◉","color":"#55aeb5","points":2,"recipe":{"wood":1,"stone":1},"category":"dopunska","desc":"+1 bod za svako prazno polje koje je direktno dodiruje na kraju partije (najviše +4).","example":"Ako su tri susjedna polja prazna na kraju, dobija +3 boda; najviše +4."}];
 const rooms = new Map();
 const cleanName = n => String(n || 'Igrač').trim().replace(/[<>]/g,'').slice(0,18) || 'Igrač';
 const code = () => crypto.randomBytes(3).toString('hex').toUpperCase();
 const clone = x => JSON.parse(JSON.stringify(x));
 const emptyBoard = () => Array(16).fill(null);
-const makePlayer = (id,name,token) => ({id,name,token,connected:true,ready:false,board:emptyBoard(),rewind:true,placedThisRound:false,builtThisRound:false,doneThisRound:false,score:0,final:null});
+const makePlayer = (id,name,token) => ({id,name,token,connected:true,ready:false,board:emptyBoard(),rewind:true,placedThisRound:false,builtThisRound:false,doneThisRound:false,score:0,coins:0,rewardedRows:[],rewardedCols:[],final:null});
 function publicRoom(room, viewerId) {
   return {code:room.code,name:room.name,hostId:room.hostId,status:room.status,settings:room.settings,round:room.round,phase:room.phase,selectorId:room.selectorId,selectedMaterial:room.selectedMaterial,deadline:room.deadline,players:room.players.map(({token,...p})=>({...p})),buildings:BUILDINGS,viewerId};
 }
@@ -37,6 +28,7 @@ function error(socket,msg) { socket.emit('notice',{type:'error',message:msg}); }
 function isHost(room,socket) { return room.hostId===socket.id; }
 function idxNeighbors(i) { const r=Math.floor(i/4),c=i%4; return [r>0?i-4:-1,r<3?i+4:-1,c>0?i-1:-1,c<3?i+1:-1].filter(x=>x>=0); }
 function connectedGroup(selected) {
+  if (!Array.isArray(selected) || !selected.length) return false;
   const neighbors = i => { const r=Math.floor(i/4),c=i%4; return [r>0?i-4:-1,r<3?i+4:-1,c>0?i-1:-1,c<3?i+1:-1].filter(x=>x>=0); };
   const seen = new Set([selected[0]]);
   let changed = true;
@@ -46,10 +38,11 @@ function connectedGroup(selected) {
       seen.add(i); changed = true;
     }
   }
-  return seen.size === 3;
+  return seen.size === selected.length;
 }
 function recipeMatches(board, selected, b) {
-  if (!Array.isArray(selected) || selected.length !== 3 || new Set(selected).size !== 3) return false;
+  const required = Object.values(b.recipe).reduce((sum,n)=>sum+n,0);
+  if (!Array.isArray(selected) || selected.length !== required || new Set(selected).size !== required) return false;
   if (selected.some(i => !Number.isInteger(i) || i < 0 || i > 15)) return false;
   const cells = selected.map(i => board[i]);
   if (cells.some(x => !x || x.type !== 'resource')) return false;
@@ -57,27 +50,45 @@ function recipeMatches(board, selected, b) {
   cells.forEach(x => counts[x.material] = (counts[x.material] || 0) + 1);
   if (Object.keys(b.recipe).some(k => (counts[k] || 0) !== b.recipe[k])) return false;
   if (Object.keys(counts).some(k => !b.recipe[k])) return false;
-  // All three resource squares must form one orthogonally connected group.
   return connectedGroup(selected);
 }
-function calcBuildingBonus(board,i,b) {
-  const near=idxNeighbors(i).map(j=>board[j]).filter(x=>x&&x.type==='building');
-  if(b.id==='cottage' && near.some(x=>x.buildingId==='farm')) return 1;
-  if(b.id==='farm' && near.some(x=>x.buildingId==='farm')) return 1;
-  if(b.id==='kiln' && board.some((x,j)=>j!==i&&x?.buildingId==='kiln'&&(Math.floor(j/4)===Math.floor(i/4)||j%4===i%4))) return 1;
-  if(b.id==='workshop' && near.some(x=>x.buildingId==='cottage')) return 1;
-  if(b.id==='market') return Math.min(2,new Set(near.map(x=>x.buildingId)).size);
-  if(b.id==='watchtower' && [0,3,12,15].includes(i)) return 2;
-  if(b.id==='library') return Math.min(2,board.filter((x,j)=>x?.buildingId==='library'&&j!==i&&(Math.floor(j/4)===Math.floor(i/4)||j%4===i%4)).length);
-  if(b.id==='fortress' && new Set(near.map(x=>x.buildingId)).size>=2) return 2;
+function calcBuildingBonus(board,i,b,final=false) {
+  const near=idxNeighbors(i).map(j=>board[j]);
+  if(b.id==='cottage') return new Set(near.filter(x=>x?.type==='building').map(x=>x.buildingId)).size;
+  if(b.id==='farm') return near.filter(x=>x?.buildingId==='farm').length*2;
+  if(b.id==='watchtower') return [0,3,12,15].includes(i)?2:0;
+  if(b.id==='kiln'||b.id==='workshop') return board.some((x,j)=>j!==i&&(x?.buildingId==='kiln'||x?.buildingId==='workshop')&&((Math.floor(j/4)===Math.floor(i/4))||j%4===i%4))?1:0;
+  if(b.id==='market') return final?near.filter(x=>x?.type==='resource').length*2:0;
+  if(b.id==='library') { const r=Math.floor(i/4),c=i%4,around=[]; for(let y=Math.max(0,r-1);y<=Math.min(3,r+1);y++)for(let x=Math.max(0,c-1);x<=Math.min(3,c+1);x++){const j=y*4+x;if(j!==i)around.push(board[j]);} return Math.min(7,around.filter(x=>x?.type==='building').length); }
+  if(b.id==='fountain') return final?Math.min(4,near.filter(x=>!x).length):0;
   return 0;
+}
+function finalBuildingScore(board) {
+  return board.reduce((sum,x,i)=>{if(x?.type!=='building')return sum;const b=BUILDINGS.find(v=>v.id===x.buildingId);return sum+(b?b.points+calcBuildingBonus(board,i,b,true):0);},0);
+}
+function currentBuildingScore(board) {
+  return board.reduce((sum,x,i)=>{if(x?.type!=='building')return sum;const b=BUILDINGS.find(v=>v.id===x.buildingId);return sum+(b?b.points+calcBuildingBonus(board,i,b,false):0);},0);
+}
+function awardCompletedLines(player) {
+  player.rewardedRows=player.rewardedRows||[];player.rewardedCols=player.rewardedCols||[];player.coins=player.coins||0;
+  const messages=[];
+  for(let r=0;r<4;r++) if(!player.rewardedRows.includes(r)&&player.board.slice(r*4,r*4+4).every(x=>x?.type==='building')) {player.rewardedRows.push(r);player.coins++;messages.push('Kompletiran red: +1 novčić!');}
+  for(let c=0;c<4;c++) if(!player.rewardedCols.includes(c)&&[0,1,2,3].every(r=>player.board[r*4+c]?.type==='building')) {player.rewardedCols.push(c);player.coins++;messages.push('Kompletirana kolona: +1 novčić!');}
+  return messages;
 }
 function finishGame(room) {
   clearTimeout(room.timer); room.status='finished'; room.phase='finished';
-  const stats=room.players.map(p=>{const buildings=p.board.filter(x=>x?.type==='building'); const rows=Array.from({length:4},(_,r)=>p.board.slice(r*4,r*4+4).every(x=>x?.type==='building')).filter(Boolean).length; const cols=Array.from({length:4},(_,c)=>[0,1,2,3].every(r=>p.board[r*4+c]?.type==='building')).filter(Boolean).length; const types=new Set(buildings.map(x=>x.buildingId)).size; const farms=buildings.filter(x=>x.buildingId==='farm').length; const base=buildings.reduce((s,x)=>s+x.points+x.bonus,0); return {id:p.id,name:p.name,buildings:buildings.length,types,farms,rows,cols,base,rowPoints:rows,columnPoints:cols,builderAward:0,varietyAward:0,farmAward:0,score:base+rows+cols};});
-  for(const key of ['buildings','types','farms']) {const max=Math.max(...stats.map(s=>s[key]));const winners=stats.filter(s=>s[key]===max); if(winners.length===1){const award=key==='farms'?2:3; winners[0].score+=award; winners[0][key==='buildings'?'builderAward':key==='types'?'varietyAward':'farmAward']=award;}}
+  const stats=room.players.map(p=>{
+    const buildings=p.board.filter(x=>x?.type==='building');
+    const rows=Array.from({length:4},(_,r)=>p.board.slice(r*4,r*4+4).every(x=>x?.type==='building')).filter(Boolean).length;
+    const cols=Array.from({length:4},(_,c)=>[0,1,2,3].every(r=>p.board[r*4+c]?.type==='building')).filter(Boolean).length;
+    const types=new Set(buildings.map(x=>x.buildingId)).size,farms=buildings.filter(x=>x.buildingId==='farm').length;
+    const base=finalBuildingScore(p.board);
+    return {id:p.id,name:p.name,buildings:buildings.length,types,farms,rows,cols,base,rowPoints:rows,columnPoints:cols,builderAward:0,varietyAward:0,farmAward:0,coins:p.coins||0,score:base+rows+cols};
+  });
+  for(const key of ['buildings','types','farms']) {const max=Math.max(...stats.map(s=>s[key]));const winners=stats.filter(s=>s[key]===max);if(winners.length===1){const award=key==='farms'?2:3;winners[0].score+=award;winners[0][key==='buildings'?'builderAward':key==='types'?'varietyAward':'farmAward']=award;}}
   room.players.forEach(p=>{p.final=stats.find(s=>s.id===p.id);p.score=p.final.score;});
-  io.to(room.code).emit('game:finished',{results:stats.sort((a,b)=>b.score-a.score),awards:['Najveći graditelj','Majstor arhitekture','Zeleni grad']});
+  io.to(room.code).emit('game:finished',{results:stats.sort((a,b)=>b.score-a.score),awards:['Najveći graditelj','Najraznovrsniji grad','Najveći poljoprivrednik']});
 }
 function beginRound(room) {
   if(room.round>=room.settings.rounds){finishGame(room);return;}
@@ -112,7 +123,7 @@ io.on('connection', socket=>{
   socket.on('host:start',()=>{const r=findRoom(socket);if(!r||!isHost(r,socket))return error(socket,'Samo domaćin može pokrenuti partiju.');if(r.status!=='lobby'||r.players.length<2)return error(socket,'Za početak su potrebna najmanje dva igrača.');r.status='playing';r.players.forEach(p=>p.ready=true);r.selectorIndex=-1;io.to(r.code).emit('game:started');beginRound(r);});
   socket.on('material:choose',({material}={})=>{const r=findRoom(socket);if(!r||r.status!=='playing'||r.phase!=='select'||r.selectorId!==socket.id)return error(socket,'Sada ne biraš materijal.');if(!MATERIALS.includes(material))return error(socket,'Nepoznat materijal.');r.selectedMaterial=material;r.phase='place';r.deadline=Date.now()+r.settings.seconds*1000;clearTimeout(r.timer);r.timer=setTimeout(()=>autoPlace(r),r.settings.seconds*1000);io.to(r.code).emit('material:selected',{material,by:socket.id,deadline:r.deadline});emitRoom(r);});
   socket.on('material:place',({index}={})=>{const r=findRoom(socket);if(!r||r.status!=='playing'||r.phase!=='place')return error(socket,'Trenutno nije faza postavljanja.');const p=r.players.find(x=>x.id===socket.id);if(!p||p.placedThisRound)return error(socket,'Već si postavio materijal.');if(!Number.isInteger(index)||index<0||index>15||p.board[index])return error(socket,'Odabrano polje nije slobodno.');p.board[index]={type:'resource',material:r.selectedMaterial};p.placedThisRound=true;io.to(r.code).emit('player:board',{playerId:p.id,board:p.board,placed:true});if(r.players.every(x=>x.placedThisRound))afterPlacements(r);});
-  socket.on('building:construct',({buildingId,resourceIndexes,placementIndex}={})=>{const r=findRoom(socket);if(!r||r.status!=='playing'||r.phase!=='build')return error(socket,'Sada nije moguće graditi.');const p=r.players.find(x=>x.id===socket.id);const b=BUILDINGS.find(x=>x.id===buildingId);if(!p||p.builtThisRound||!b)return error(socket,'Izgradnja nije dostupna.');if(!Array.isArray(resourceIndexes)||!recipeMatches(p.board,resourceIndexes,b))return error(socket,'Odabrani materijali ne odgovaraju receptu ili rasporedu.');if(!resourceIndexes.includes(placementIndex))return error(socket,'Zgrada mora zauzeti jedno od tri oslobođena polja.');resourceIndexes.forEach(i=>p.board[i]=null);const bonus=calcBuildingBonus(p.board,placementIndex,b);p.board[placementIndex]={type:'building',buildingId:b.id,name:b.name,points:b.points,bonus};p.builtThisRound=true;p.doneThisRound=true;p.score+=b.points+bonus;socket.emit('building:built',{board:p.board,building:b,bonus,placementIndex});io.to(r.code).emit('player:board',{playerId:p.id,board:p.board,placed:true});emitRoom(r);nextIfDone(r);});
+  socket.on('building:construct',({buildingId,resourceIndexes,placementIndex}={})=>{const r=findRoom(socket);if(!r||r.status!=='playing'||r.phase!=='build')return error(socket,'Sada nije moguće graditi.');const p=r.players.find(x=>x.id===socket.id);const b=BUILDINGS.find(x=>x.id===buildingId);if(!p||p.builtThisRound||!b)return error(socket,'Izgradnja nije dostupna.');if(!Array.isArray(resourceIndexes)||!recipeMatches(p.board,resourceIndexes,b))return error(socket,'Odabrani materijali ne odgovaraju receptu ili rasporedu.');if(!resourceIndexes.includes(placementIndex))return error(socket,'Zgrada mora zauzeti jedno od tri oslobođena polja.');resourceIndexes.forEach(i=>p.board[i]=null);const bonus=calcBuildingBonus(p.board,placementIndex,b,false);p.board[placementIndex]={type:'building',buildingId:b.id,name:b.name,points:b.points,bonus};p.builtThisRound=true;p.doneThisRound=true;p.score=currentBuildingScore(p.board);awardCompletedLines(p).forEach(message=>socket.emit('notice',{type:'success',message}));socket.emit('building:built',{board:p.board,building:b,bonus,placementIndex});io.to(r.code).emit('player:board',{playerId:p.id,board:p.board,placed:true});emitRoom(r);nextIfDone(r);});
   socket.on('building:skip',()=>{const r=findRoom(socket);if(!r||r.status!=='playing'||r.phase!=='build')return;const p=r.players.find(x=>x.id===socket.id);if(p){p.builtThisRound=true;p.doneThisRound=true;emitRoom(r);nextIfDone(r);}});
   socket.on('turn:done',()=>{
     const r=findRoom(socket);if(!r||r.status!=='playing'||!['place','build'].includes(r.phase))return;
