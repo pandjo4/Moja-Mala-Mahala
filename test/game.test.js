@@ -115,3 +115,12 @@ test('bonusi građevina računaju se prema novim pravilima',()=>{
   board=Array(16).fill(null);
   assert.equal(ctx.calc(board,5,b('fountain'),true),4);
 });
+
+
+test('dinamički pravilnik ne zaustavlja učitavanje ostatka interfejsa',()=>{
+  const client=read('public/script.js');
+  assert.match(client,/const originalShowRules=\$\('showRules'\)\.onclick/);
+  assert.match(client,/const closeRules=\$\('closeRules'\);if\(closeRules\)closeRules\.onclick=closeModal/);
+  assert.doesNotMatch(client,/\$\('closeRules'\)\.onclick=closeModal;\$\('backHome'\)/);
+  assert.match(client,/socket\.on\('connect_error'/);
+});
