@@ -124,3 +124,28 @@ test('dinamički pravilnik ne zaustavlja učitavanje ostatka interfejsa',()=>{
   assert.doesNotMatch(client,/\$\('closeRules'\)\.onclick=closeModal;\$\('backHome'\)/);
   assert.match(client,/socket\.on\('connect_error'/);
 });
+
+
+test('partija podržava 10, 15, 20, 30 i 40 krugova na serveru i klijentu',()=>{
+ const server=read('server.js'),client=read('public/script.js'),html=read('public/index.html');
+ for(const value of [10,15,20,30,40]){
+  assert.ok(server.includes(`[10,15,20,30,40].includes(+payload.rounds)`));
+  assert.ok(server.includes(`[10,15,20,30,40].includes(+s.rounds)`));
+  assert.ok(client.includes(`value="${value}"`));
+  assert.ok(html.includes(`value="${value}"`));
+ }
+});
+test('završni rezultat šalje i prikazuje finalne ploče',()=>{
+ const server=read('server.js'),client=read('public/script.js'),html=read('public/index.html');
+ assert.match(server,/board:p\.board\.map/);
+ assert.match(client,/const finalists=isSolo\?sorted\.slice\(0,1\):sorted\.slice\(0,2\)/);
+ assert.match(client,/final-board-grid/);
+ assert.match(html,/id="finalBoards"/);
+});
+test('postoje predviđene putanje za tri prilagodljive ikone i zvukove',()=>{
+ const client=read('public/script.js');
+ assert.match(client,/\/icons\/\$\{id\}\.png/);
+ assert.match(client,/playSfx\('place'\)/);
+ assert.match(client,/playSfx\('build'\)/);
+ assert.ok(fs.existsSync(path.join(root,'public/icons/README.txt')));
+});

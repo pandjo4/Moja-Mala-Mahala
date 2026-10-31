@@ -1,0 +1,1 @@
+Ubaci PNG ikone: wood.png, brick.png, stone.png. Preporuka: bijele vektorske ikone, transparentna pozadina, 128x128 ili 256x256 px.

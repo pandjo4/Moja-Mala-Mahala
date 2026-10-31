@@ -37,3 +37,12 @@ Svaki kompletiran red ili kolona sa četiri građevine donosi +1 novčić odmah,
 Bodovi građevina i bonusi se računaju na kraju partije. Pijaca i Fontana ostvaruju završne bonuse tek tada. U multiplayeru jedinstveni prvak po broju građevina dobija +3, po različitim tipovima +3, a po broju Farma +2; kod izjednačenja nagrada se ne dodjeljuje. Solo igra dodjeljuje odgovarajuću nagradu ako je uslov ispunjen.
 
 Svaki igrač ima jedan REWIND po partiji, kojim može zamijeniti jedan postavljeni materijal trenutnim materijalom. Građevine se ne mogu uklanjati.
+
+
+## Prilagođene ikone materijala
+U `public/icons/` ubaci tri PNG vektorski stilizovane bijele ikone sa transparentnom pozadinom:
+- `wood.png` — drvo
+- `brick.png` — cigla
+- `stone.png` — kamen
+
+Ako neka slika nedostaje, igra automatski prikazuje rezervni simbol. Zvukovi postavljanja materijala i izgradnje generišu se u pregledniku; dugme za zvuk u zaglavlju ih uključuje/isključuje.
