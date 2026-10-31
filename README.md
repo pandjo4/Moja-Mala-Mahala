@@ -39,10 +39,12 @@ Bodovi građevina i bonusi se računaju na kraju partije. Pijaca i Fontana ostva
 Svaki igrač ima jedan REWIND po partiji, kojim može zamijeniti jedan postavljeni materijal trenutnim materijalom. Građevine se ne mogu uklanjati.
 
 
-## Prilagođene ikone materijala
-U `public/icons/` ubaci tri PNG vektorski stilizovane bijele ikone sa transparentnom pozadinom:
-- `wood.png` — drvo
-- `brick.png` — cigla
-- `stone.png` — kamen
+## Slike (PNG)
+Sve slike su bijele s prozirnom pozadinom. Ako neka slika nedostaje, igra automatski koristi rezervni prikaz.
 
-Ako neka slika nedostaje, igra automatski prikazuje rezervni simbol. Zvukovi postavljanja materijala i izgradnje generišu se u pregledniku; dugme za zvuk u zaglavlju ih uključuje/isključuje.
+- `public/icons/` — `wood.png`, `brick.png`, `stone.png` (materijali; prikazuju se na ploči, u izboru materijala, na ploči protivnika, u prozoru za gradnju i na kraju partije)
+- `public/buildings/` — `cottage.png`, `farm.png`, `watchtower.png`, `kiln.png`, `workshop.png`, `market.png`, `library.png`, `fountain.png` (zgrade; rezervno se crta vektor iz `public/assets/buildings.svg`)
+
+## Zvuk i muzika
+- Pozadinska muzika: `public/audio/background.mp3` (petlja; kreće pri prvom kliku igrača jer preglednici blokiraju automatski zvuk). Ako fajl ne postoji, igra radi bez muzike.
+- U zaglavlju: dugmad **−** / **+** mijenjaju jačinu zvuka (korak 10%), a **♫** uključuje/isključuje sav zvuk. Jačina se pamti u pregledniku. Vrijedi i za muziku i za zvučne efekte.

@@ -70,3 +70,32 @@
 .sound-muted{opacity:.55}
 #soundToggle.muted{opacity:.45}
 @media(max-width:600px){.final-board-card{padding:12px}.final-board-grid{gap:5px}.final-board-cell{border-radius:7px}.final-board-heading h4{font-size:1rem}}
+
+/* ===== Kontrole zvuka ===== */
+.volume-control{display:flex;align-items:center;gap:6px;margin-left:10px}
+.volume-control .icon-button{margin-left:0;width:32px;height:32px;display:grid;place-items:center;padding:0;font-size:15px;line-height:1}
+.volume-control .icon-button:disabled{opacity:.35;cursor:default}
+.volume-label{min-width:32px;text-align:right;font-size:10px;font-weight:700;color:var(--muted)}
+@media(max-width:650px){.volume-control{gap:4px;margin-left:4px}.volume-control .icon-button{width:28px;height:28px;font-size:13px}.volume-label{min-width:26px;font-size:9px}#connectionLabel{display:none}}
+
+/* ===== Ikone materijala svuda (bijele PNG slike na obojenoj podlozi) ===== */
+.resource-token .material-icon{object-fit:contain}
+.material-button .resource-token .material-icon{width:16px;height:16px}
+.modal .board-cell .resource-token .material-icon{width:70%;height:70%}
+.resource-token.mini{display:inline-grid;width:30px;height:30px;margin:0 auto 4px;border-radius:6px}
+.resource-token.mini .material-icon{width:20px;height:20px}
+.resource-token.inline{display:inline-grid;width:20px;height:20px;border-radius:5px;vertical-align:middle;box-shadow:none}
+.resource-token.inline .material-icon{width:14px;height:14px}
+.choice-cell{color:#3f5a3d}
+
+/* ===== PNG slike zgrada (public/buildings/<id>.png) ===== */
+.building-png{object-fit:contain;-webkit-user-drag:none;user-select:none}
+.building-icon.mini{display:inline-grid;width:22px;height:22px;margin-right:4px;vertical-align:middle;border-radius:5px}
+.building-icon.mini .building-svg{width:78%;height:78%}
+
+/* ===== Završne ploče: tamno siva polja, materijali su čiste bijele slike ===== */
+.final-board-cell{background:#454e49;border-color:#566059;color:#fff}
+.final-board-cell>small{color:#b8c1ba}
+.final-resource{width:62%;height:62%;color:#fff}
+.final-building{color:#fff}
+.final-building small{color:#fff;text-shadow:0 1px 2px #0005}
