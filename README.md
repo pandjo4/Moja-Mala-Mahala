@@ -22,8 +22,8 @@ Igra koristi Drvo, Ciglu i Kamen. Svaki krug igrači dobijaju isti materijal i p
 - Glavna kuća: 3 materijala; +1 za svaki različiti tip susjedne građevine.
 - Farma: 3 materijala; +2 za svaku susjednu Farmu.
 - Kula: 3 materijala; +2 u uglu table.
-- Ciglana: 3 materijala; +1 ako je u istom redu ili koloni druga Ciglana ili Radionica.
-- Radionica: 3 materijala; isto industrijsko pravilo kao Ciglana.
+- Ciglana: 3 materijala, 4 osnovna boda; +1 ako je u istom redu ili koloni druga Ciglana ili Radionica.
+- Radionica: 3 materijala, 4 osnovna boda; isto industrijsko pravilo kao Ciglana.
 - Pijaca: 3 materijala; na kraju +2 za svaki susjedni neiskorišteni materijal.
 - Biblioteka: jedina građevina s 4 materijala; +1 za svaku drugu građevinu u osam okolnih polja (uključujući dijagonale), najviše +7.
 - Fontana: dopunska građevina, 2 materijala; na kraju +1 za svako prazno susjedno polje, najviše +4.
